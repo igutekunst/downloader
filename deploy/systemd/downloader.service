@@ -1,0 +1,27 @@
+[Unit]
+Description=Downloader (qBittorrent + VPN + Uploader)
+Documentation=https://github.com/yourusername/downloader
+Requires=docker.service
+After=docker.service network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=downloader
+Group=downloader
+WorkingDirectory=/opt/downloader
+
+# Start containers
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+
+# Stop containers gracefully
+ExecStop=/usr/bin/docker compose down
+
+# Restart policy handled by Docker, not systemd
+Restart=no
+
+# Environment
+Environment=COMPOSE_PROJECT_NAME=downloader
+
+[Install]
+WantedBy=multi-user.target
