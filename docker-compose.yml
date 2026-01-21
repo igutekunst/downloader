@@ -1,0 +1,60 @@
+services:
+  vpn:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+    environment:
+      VPN_SERVICE_PROVIDER: protonvpn
+      OPENVPN_USER: ${PROTONVPN_USER}
+      OPENVPN_PASSWORD: ${PROTONVPN_PASS}
+      SERVER_COUNTRIES: ${VPN_COUNTRY:-United States}
+      SERVER_CITIES: ${VPN_CITIES:-}
+      FREE_ONLY: "off"
+      VPN_PORT_FORWARDING: "on"
+      DOT: "off"
+      FIREWALL: "off"
+    ports:
+      # qBittorrent Web UI
+      - "8080:8080"
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    network_mode: service:vpn
+    depends_on:
+      vpn:
+        condition: service_healthy
+    environment:
+      - PUID=${PUID:-1000}
+      - PGID=${PGID:-1000}
+      - TZ=UTC
+      - WEBUI_PORT=8080
+    volumes:
+      - ./config/qbittorrent:/config
+      - ./downloads:/downloads
+
+  uploader:
+    build: ./services/uploader
+    container_name: uploader
+    restart: unless-stopped
+    depends_on:
+      - qbittorrent
+    environment:
+      SFTP_HOST: ${SFTP_HOST}
+      SFTP_PORT: ${SFTP_PORT:-22}
+      SFTP_USER: ${SFTP_USER}
+      SFTP_REMOTE_PATH: ${SFTP_REMOTE_PATH:-/uploads}
+      SFTP_TEMP_EXTENSION: ${SFTP_TEMP_EXTENSION:-.uploading}
+      SFTP_RETRY_COUNT: ${SFTP_RETRY_COUNT:-3}
+      SFTP_RETRY_DELAY: ${SFTP_RETRY_DELAY:-30}
+      WATCH_PATH: /downloads/complete
+    volumes:
+      - ./downloads/complete:/downloads/complete:ro
+      - ./config/keys:/config/keys
