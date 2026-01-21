@@ -1,0 +1,31 @@
+# Environment (contains secrets)
+.env
+
+# qBittorrent runtime data
+config/qbittorrent/
+
+# Downloads
+downloads/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# SFTP keys
+*.pem
+id_rsa
+id_ed25519
+config/keys/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
